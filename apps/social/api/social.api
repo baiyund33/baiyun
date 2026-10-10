@@ -1,0 +1,80 @@
+syntax = "v1"
+
+info (
+	title: "社交服务 API"
+	desc:  "提供好友申请接口"
+)
+
+type (
+	ApplyFriendReq {
+		ToUserId int64  `json:"toUserId"`
+		Message  string `json:"message,optional"`
+	}
+	ApplyFriendResp {
+		Id int64 `json:"id"`
+	}
+	ListFriendApplicationsReq {
+		Page     int32 `form:"page,default=1"`
+		PageSize int32 `form:"pageSize,default=20"`
+	}
+	FriendApplication {
+		Id         int64  `json:"id"`
+		FromUserId int64  `json:"fromUserId"`
+		Message    string `json:"message"`
+		Status     int32  `json:"status"`
+	}
+	ListFriendApplicationsResp {
+		//没有编写为[]*FriendApplication,使用时不需要写*
+		Applications []FriendApplication `json:"applications"`
+		Total        int64               `json:"total"`
+	}
+	HandleFriendApplicationReq {
+		Id     int64 `path:"id"`
+		Status int32 `json:"status"`
+	}
+	HandleFriendApplicationResp {
+		Id     int64 `json:"id"`
+		Status int32 `json:"status"`
+	}
+	ListFriendsReq {
+		Page     int32 `form:"page,default=1"`
+		PageSize int32 `form:"pageSize,default=20"`
+	}
+	FriendInfo {
+		Id           int64  `json:"id"`
+		FriendUserId int64  `json:"friendUserId"`
+		Name         string `json:"name"`
+		CreatedAt    int64  `json:"createdAt"` // 添加好友时间，Unix秒。
+	}
+	ListFriendsResp {
+		Friends []FriendInfo `json:"friends"`
+		Total   int64        `json:"total"`
+	}
+	DeleteFriendReq {
+		FriendUserId int64 `path:"friendUserId"`
+	}
+	DeleteFriendResp {
+		FriendUserId int64 `json:"friendUserId"`
+	}
+)
+
+@server (
+	jwt: Auth
+)
+service social {
+	@handler applyFriend
+	post /api/social/friend/apply (ApplyFriendReq) returns (ApplyFriendResp)
+
+	@handler listFriendApplications
+	get /api/social/friend/applications (ListFriendApplicationsReq) returns (ListFriendApplicationsResp)
+
+	@handler handleFriendApplication
+	post /api/social/friend/applications/:id (HandleFriendApplicationReq) returns (HandleFriendApplicationResp)
+
+	@handler listFriends
+	get /api/social/friends (ListFriendsReq) returns (ListFriendsResp)
+
+	@handler deleteFriend
+	delete /api/social/friends/:friendUserId (DeleteFriendReq) returns (DeleteFriendResp)
+}
+

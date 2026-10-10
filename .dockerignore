@@ -1,0 +1,17 @@
+# 本机工具和版本管理文件
+.git
+.idea
+.vscode
+
+# 不把含连接凭据的运行配置发送到构建器
+**/etc
+.env
+.env.*
+
+# 文档、日志和已编译产物
+docs
+**/logs
+bin
+dist
+**/*.exe
+**/*.test

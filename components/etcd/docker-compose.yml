@@ -1,0 +1,22 @@
+# 将 etcd 服务块加入服务器 /data/by/docker-compose.yml 的 services 下。
+# 将 SERVER_IP 替换为应用可访问的服务器 IP。
+services:
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.21
+    container_name: etcd
+    restart: always
+    ports:
+      - "2379:2379"
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - /data/etcd/data:/etcd-data
+    command:
+      - /usr/local/bin/etcd
+      - --name=etcd
+      - --data-dir=/etcd-data
+      - --listen-client-urls=http://0.0.0.0:2379
+      - --advertise-client-urls=http://SERVER_IP:2379
+      - --listen-peer-urls=http://127.0.0.1:2380
+      - --initial-advertise-peer-urls=http://127.0.0.1:2380
+      - --initial-cluster=etcd=http://127.0.0.1:2380

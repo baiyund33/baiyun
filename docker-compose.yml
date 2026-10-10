@@ -1,0 +1,29 @@
+# 在项目根目录执行 docker compose up -d --build。
+services:
+  user-rpc:
+    image: baiyun-user-rpc:1.0.0
+    build:
+      context: .
+      dockerfile: apps/user/rpc/Dockerfile
+    container_name: user-rpc
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./apps/user/rpc/etc/user.yaml:/app/etc/user.yaml:ro
+
+  user-api:
+    image: baiyun-user-api:1.0.0
+    build:
+      context: .
+      dockerfile: apps/user/api/Dockerfile
+    container_name: user-api
+    restart: always
+    ports:
+      - "8888:8888"
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./apps/user/api/etc/user.yaml:/app/etc/user.yaml:ro
+    depends_on:
+      - user-rpc

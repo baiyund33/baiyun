@@ -1,0 +1,16 @@
+Name: social.rpc
+ListenOn: 0.0.0.0:8081
+Etcd:
+  Hosts:
+  - 43.136.35.79:2379
+  Key: social.rpc
+
+# MySQL 配置
+Mysql:
+  DataSource: root:Ic8cIlOqS2GtqDmSxTGI@tcp(43.136.35.79:50150)/im?charset=utf8mb4&parseTime=true&loc=Local
+
+UserRpc:
+  Etcd:
+    Hosts:
+      - 43.136.35.79:2379
+    Key: user.rpc

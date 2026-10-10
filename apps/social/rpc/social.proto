@@ -1,0 +1,91 @@
+// 使用 proto3 语法。
+syntax = "proto3";
+
+// 定义协议命名空间，避免不同服务的名称冲突。
+// baiyun：项目名称；social：用户模块。
+package baiyun.social;
+
+// 指定生成文件位于本 RPC 服务目录下的 social 子目录，Go 包名为 social。
+option go_package = "./social";
+
+// 发送好友申请。
+message ApplyFriendRequest  {
+  int64 from_user_id = 1; // 申请人，后续由 API 从登录 Token 获取。
+  int64 to_user_id = 2;   // 接收人。
+  string message = 3;     // 申请附言。
+}
+
+message ApplyFriendResponse  {
+  int64 id = 1; // 申请记录 ID。
+}
+
+// 查询收到的好友申请。
+message ListFriendApplicationsRequest {
+  int64 user_id = 1;   // 接收人，后续由 API 从 JWT 获取。
+  int32 page = 2;      // 页码，从 1 开始。
+  int32 page_size = 3; // 每页数量。
+}
+
+// 一条好友申请记录。
+message FriendApplication {
+  int64 id = 1;
+  int64 from_user_id = 2;
+  string message = 3;
+  int32 status = 4;     // 0待处理、1已接受、2已拒绝。
+  int64 created_at = 5; // Unix 时间戳，单位秒。
+  int64 updated_at = 6;
+}
+
+message ListFriendApplicationsResponse {
+  //repeated 表示该字段是一个列表，可以包含零个或多个同类型的元素。接近于声明 List<T> 集合
+  //message 本身生成的是结构体，作为另一个消息的字段时才通常使用指针。
+  repeated FriendApplication list = 1; // 申请列表。
+  int64 total = 2;                     // 总记录数。
+}
+
+message HandleFriendApplicationRequest {
+  int64 id = 1;      // 申请记录ID。
+  int64 user_id = 2; // 操作人，由 API 从 JWT 获取。
+  int32 status = 3;  // 1接受、2拒绝，只允许这两个值。希望修改的状态，不是当前状态
+}
+
+message HandleFriendApplicationResponse {
+  int64 id = 1; // 本次处理的申请记录 ID。
+  int32 status = 2; // 处理后的状态，1 表示已接受，2 表示已拒绝。
+}
+
+message ListFriendsRequest{
+  int64 user_id = 1;   // 用户ID，由 API 从 JWT 获取。
+  int32 page = 2;      // 页码，从 1 开始。
+  int32 page_size = 3; // 每页数量。
+}
+
+message FriendInfo{
+  int64 id = 1;             // 好友关系记录ID。
+  int64 friend_user_id = 2; // 好友用户ID。
+  string name = 3;          // 好友昵称。通过用户服务获取。
+  int64 created_at = 4;     // Unix 时间戳，单位秒。
+}
+
+message ListFriendsResponse{
+  repeated FriendInfo list = 1; // 好友列表。
+  int64 total = 2;          // 总记录数。
+}
+
+message DeleteFriendRequest {
+  int64 user_id = 1;        // 操作者，由 API 从 JWT 获取。
+  int64 friend_user_id = 2; // 要删除的好友用户ID。
+}
+
+message DeleteFriendResponse {
+  int64 friend_user_id = 1; // 已删除的好友用户ID。
+}
+
+service social {
+  // 发送好友申请。
+  rpc ApplyFriend(ApplyFriendRequest) returns (ApplyFriendResponse);
+  rpc ListFriendApplications(ListFriendApplicationsRequest) returns (ListFriendApplicationsResponse);
+  rpc HandleFriendApplication(HandleFriendApplicationRequest) returns (HandleFriendApplicationResponse);
+  rpc ListFriends(ListFriendsRequest) returns (ListFriendsResponse);
+  rpc DeleteFriend(DeleteFriendRequest) returns (DeleteFriendResponse);
+}

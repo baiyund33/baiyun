@@ -1,0 +1,115 @@
+// 使用 proto3 语法。
+syntax = "proto3";
+
+// 定义协议命名空间，避免不同服务的名称冲突。
+// baiyun：项目名称；user：用户模块。
+package baiyun.user;
+
+// 指定生成文件位于本 RPC 服务目录下的 user 子目录，Go 包名为 user。
+option go_package = "./user";
+
+// 定义请求消息 PingRequest。
+message PingRequest {
+  // 字符串字段 name；1 是字段编号，不是默认值。
+  string name = 1;
+} // 请求消息定义结束。
+
+// 定义响应消息 PingResponse。
+message PingResponse {
+  // 字符串字段 message；编号在当前消息内唯一。
+  string message = 1;
+} // 响应消息定义结束。
+
+
+// 定义创建用户请求消息 CreateUserRequest。
+message CreateUserRequest {
+  string name = 1;
+  string phone = 2;
+}
+
+message CreateUserResponse {
+  int64 id = 1;
+}
+
+//删除
+message DeleteUserRequest {
+  int64 id = 1;
+}
+
+message DeleteUserResponse {
+  int64 id = 1;
+}
+
+//更新
+message UpdateUserRequest {
+  int64 id = 1;
+  string name = 2;
+  string phone = 3;
+}
+
+message UpdateUserResponse {
+  int64 id = 1;
+}
+
+//注册
+message RegisterRequest {
+  string name = 1;
+  string phone = 2;
+  string password = 3;
+}
+
+message RegisterResponse {
+  int64 id = 1;
+}
+
+//登录
+message LoginRequest {
+  string phone = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  int64 id = 1;
+  string name = 2;
+}
+
+
+message GetUserRequest {
+  int64 id = 1;
+}
+
+message GetUserResponse {
+  int64 id = 1;
+  string name = 2;
+}
+
+//批量查询用户，返回id和name
+message GetUsersRequest {
+  repeated int64 ids = 1;
+}
+
+message UserInfo {
+  int64 id = 1;
+  string name = 2;
+}
+
+message GetUsersResponse {
+  repeated UserInfo users = 1;
+}
+
+
+// 定义名为 User 的 RPC 服务。
+service User {
+  // 定义 Ping 方法：接收 PingRequest，返回 PingResponse。
+  rpc Ping(PingRequest) returns (PingResponse);
+
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  // 批量查询用户
+  rpc GetUsers(GetUsersRequest) returns (GetUsersResponse);
+} // 服务定义结束。

@@ -1,0 +1,16 @@
+Name: user
+Host: 0.0.0.0
+Port: 8888
+
+UserRpc:
+#  Endpoints:
+#    - 127.0.0.1:8080
+
+  Etcd:
+    Hosts:
+      - 43.136.35.79:2379
+    Key: user.rpc
+
+Auth:
+  AccessSecret: k9V5FmTwE7H1xCdZ8RLaN4PqYs2J0c3U
+  AccessExpire: 7200

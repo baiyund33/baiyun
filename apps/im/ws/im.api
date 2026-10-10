@@ -1,0 +1,12 @@
+syntax = "v1"
+
+info (
+	title: "即时聊天服务"
+	desc:  "提供 WebSocket 连接入口"
+)
+
+service im {
+	@handler wsConnect
+	get /ws
+}
+

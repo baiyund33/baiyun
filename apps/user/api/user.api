@@ -1,0 +1,77 @@
+syntax = "v1"
+
+info (
+	title: "用户服务 API"
+	desc:  "提供用户相关的 HTTP 接口"
+)
+
+type (
+	PingReq {
+		Name string `json:"name"`
+	}
+	PingResp {
+		Message string `json:"message"`
+	}
+	CreateUserReq {
+		Name  string `json:"name"`
+		Phone string `json:"phone"`
+	}
+	CreateUserResp {
+		Id int64 `json:"id"`
+	}
+	UpdateUserReq {
+		Id    int64  `path:"id"`
+		Name  string `json:"name,optional"`
+		Phone string `json:"phone,optional"`
+	}
+	UpdateUserResp {
+		Id int64 `json:"id"`
+	}
+	DeleteUserReq {
+		Id int64 `path:"id"`
+	}
+	DeleteUserResp {
+		Id int64 `json:"id"`
+	}
+	RegisterReq {
+		Name     string `json:"name"`
+		Phone    string `json:"phone"`
+		Password string `json:"password"`
+	}
+	RegisterResp {
+		Id int64 `json:"id"`
+	}
+	LoginReq {
+		Phone    string `json:"phone"`
+		Password string `json:"password"`
+	}
+	LoginResp {
+		Id           int64  `json:"id"`
+		Name         string `json:"name"`
+		AccessToken  string `json:"accessToken"`
+		AccessExpire int64  `json:"accessExpire"`
+	}
+)
+
+service user {
+	@handler ping
+	post /api/user/ping (PingReq) returns (PingResp)
+
+	@handler register
+	post /api/user/register (RegisterReq) returns (RegisterResp)
+
+	@handler login
+	post /api/user/login (LoginReq) returns (LoginResp)
+}
+
+@server (
+	jwt: Auth
+)
+service user {
+	@handler updateUser
+	put /api/user/:id (UpdateUserReq) returns (UpdateUserResp)
+
+	@handler deleteUser
+	delete /api/user/:id (DeleteUserReq) returns (DeleteUserResp)
+}
+
