@@ -1,0 +1,22 @@
+# Local runtime configuration; commit templates only.
+apps/**/etc/*.yaml
+!apps/**/etc/*.example.yaml
+.env
+.env.*
+!.env.example
+
+# Dependencies and generated output.
+**/node_modules/
+**/dist/
+**/test-results/
+**/playwright-report/
+web/tests/results/
+bin/
+*.exe
+*.test
+*.log
+
+# Editor state.
+.idea/
+.vscode/
+**/.obsidian/workspace.json

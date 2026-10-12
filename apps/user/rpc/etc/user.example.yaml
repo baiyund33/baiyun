@@ -1,0 +1,17 @@
+Name: user.rpc  # 服务名称
+ListenOn: 0.0.0.0:8080  # 监听所有 IP 地址
+# Etcd 配置
+Etcd:
+  Hosts:
+  - ETCD_HOST:2379
+  Key: user.rpc
+
+# MySQL 配置
+Mysql:
+  DataSource: "DB_USER:DB_PASSWORD@tcp(MYSQL_HOST:3306)/DB_NAME?charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai"
+
+# Redis 配置
+Redisx:
+  Host: "REDIS_HOST:6379"
+  Type: node
+  Pass: "REDIS_PASSWORD"

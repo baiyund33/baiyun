@@ -1,0 +1,10 @@
+Name: im
+Host: 0.0.0.0
+Port: 8890
+
+
+Auth:
+  AccessSecret: "CHANGE_ME_SHARED_JWT_SECRET"
+
+AllowedOrigins:
+  - "http://localhost:3000"

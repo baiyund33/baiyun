@@ -1,0 +1,16 @@
+Name: user
+Host: 0.0.0.0
+Port: 8888
+
+UserRpc:
+#  Endpoints:
+#    - 127.0.0.1:8080
+
+  Etcd:
+    Hosts:
+      - ETCD_HOST:2379
+    Key: user.rpc
+
+Auth:
+  AccessSecret: "CHANGE_ME_SHARED_JWT_SECRET"
+  AccessExpire: 7200
