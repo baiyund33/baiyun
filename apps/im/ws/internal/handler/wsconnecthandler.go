@@ -5,6 +5,8 @@ package handler
 
 import (
 	"context"
+	"errors"
+	"net"
 	"net/http"
 	"strconv"
 	"time"
@@ -48,6 +50,7 @@ func wsConnectHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		// 将已验证的身份交给后续业务逻辑。
+		//把已验证的用户 ID 放入上下文，让后面的业务逻辑知道当前是谁在连接。
 		ctx := context.WithValue(
 			r.Context(),
 			"userId",
@@ -61,6 +64,7 @@ func wsConnectHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		// 将当前 HTTP 连接升级为 WebSocket。
+		// 写出握手响应 当前握手请求 不额外添加自定义握手响应头
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			// Upgrade 已处理握手失败响应，不再写 HTTP 响应。
@@ -71,14 +75,60 @@ func wsConnectHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		// 限制单条消息大小，最多64 KiB。
 		conn.SetReadLimit(64 * 1024)
 
+		// 收到心跳回应，延长连接的等待时间。
+		conn.SetPongHandler(func(string) error {
+			return conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		})
+
+		// 通知后台心跳任务：连接已经结束。
+		done := make(chan struct{})
+		defer close(done)
+
+		// 后台定期发送心跳，不阻塞下面的消息读取。
+		go func() {
+			ticker := time.NewTicker(20 * time.Second)
+			defer ticker.Stop() // 心跳 goroutine 退出时，`ticker.Stop()` 停止定时器，释放相关资源。
+
+			for {
+				select {
+				case <-ticker.C:
+					//
+					err := conn.WriteControl(
+						websocket.PingMessage,
+						nil,
+						time.Now().Add(10*time.Second),
+					)
+					if err != nil {
+						conn.Close()
+						return
+					}
+				// `chan struct{}` 不传业务数据，只用来通知：“这个连接已经结束”。
+				case <-done:
+					return
+				}
+			}
+		}()
+
 		for {
-			// 60秒没有收到消息，就退出并释放连接。
+			// 60秒未收到消息或心跳回应，则释放连接。
 			if err := conn.SetReadDeadline(time.Now().Add(60 * time.Second)); err != nil {
 				return
 			}
 
 			messageType, message, err := conn.ReadMessage()
 			if err != nil {
+				var netErr net.Error
+				if errors.As(err, &netErr) && netErr.Timeout() {
+					// 超时后尽力通知客户端，再释放连接。
+					_ = conn.WriteControl(
+						websocket.CloseMessage,
+						websocket.FormatCloseMessage(
+							websocket.CloseGoingAway,
+							"连接超时",
+						),
+						time.Now().Add(3*time.Second),
+					)
+				}
 				return
 			}
 
