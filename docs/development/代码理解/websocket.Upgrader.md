@@ -1,20 +1,20 @@
 ```go
-upgrader := websocket.Upgrader{  
-    HandshakeTimeout: 5 * time.Second,  
-  
-    // 只协商应用协议，不把登录令牌返回给浏览器。  
-    Subprotocols: []string{"baiyun"},  
-  
-    // 只允许配置中的浏览器来源建立连接。  
-    CheckOrigin: func(r *http.Request) bool {  
-       origin := r.Header.Get("Origin")  
-       for _, allowed := range svcCtx.Config.AllowedOrigins {  
-          if origin == allowed {  
-             return true  
-          }  
-       }  
-       return false  
-    },  
+upgrader := websocket.Upgrader{
+    HandshakeTimeout: 5 * time.Second,
+
+    // 只协商应用协议，不把登录令牌返回给浏览器。
+    Subprotocols: []string{"baiyun"},
+
+    // 只允许配置中的浏览器来源建立连接。
+    CheckOrigin: func(r *http.Request) bool {
+       origin := r.Header.Get("Origin")
+       for _, allowed := range svcCtx.Config.AllowedOrigins {
+          if origin == allowed {
+             return true
+          }
+       }
+       return false
+    },
 }
 ```
 这段代码创建一个 **WebSocket 升级器 `upgrader`**，并规定连接升级时的超时、子协议和来源检查规则。

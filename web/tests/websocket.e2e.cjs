@@ -197,4 +197,3 @@ async function healthyIdleConnection(page) {
   console.error(String(error.message).replace(/[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, '[redacted]'));
   process.exitCode = 1;
 });
-
