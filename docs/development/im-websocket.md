@@ -1,6 +1,47 @@
 # IM WebSocket 服务
 
-更新：2026-10-11。状态：JWT鉴权、来源白名单、连接升级与原样回显代码已存在；静态核对通过，尚未构建/真实握手，没有好友转发、心跳或存储。下方10-09记录保留为历史进展。
+更新：2026-10-11。状态：JWT鉴权、来源白名单、连接升级、回显与心跳已通过最新代码独立服务测试；超限关闭code1006待完善。没有好友转发或存储。下方准备步骤与早期测试记录保留为历史进展。
+
+## 2026-10-12 提交前核对
+
+用户已在读取超时分支尽力发送1001关闭帧，并创建 `internal/connection/manager.go`：Manager包含RWMutex与用户多连接集合，NewManager初始化外层map。注册/移除/查询方法及安全发送尚未实现，也未接入ServiceContext，不能视为在线管理已完成。连接管理借鉴参考 `easy-im-master/go-im/apps/im/ws/websocket/server.go` 的索引和锁；本项目允许多个页面连接，参考实现则替换同用户旧连接。
+
+本轮 `go build ./apps/im/ws/...`、gofmt格式检查、`go test ./apps/social/rpc/internal/logic/...`、前端TypeScript无输出类型检查和 `node --check web/tests/websocket.e2e.cjs` 均通过。本轮未重跑70秒浏览器测试，新超时分支尚无运行验证；14项报告对应前一轮心跳代码。测试结果目录只保留本地，脚本纳入仓库。
+
+运行配置已停止跟踪，仓库提交 `etc/*.example.yaml`；本机原文件保留，首次拉取需复制示例并填写实际配置，参见 [项目准备](../../README.md)。历史凭据需更换，不因移除当前配置而自动失效。
+
+## 最新心跳验证（2026-10-11）
+
+用户修改 `apps/im/ws/internal/handler/wsconnecthandler.go`：每20秒后台发送协议Ping，收到Pong延长60秒读取期限，handler退出时关闭done通知并停止ticker。保持一个读取者和一个普通消息写入者；WriteControl允许并发发送控制帧。参考 `easy-im-master/go-im/apps/im/ws/websocket/server.go` 的连接退出通知与帧处理；本项目采用gorilla标准Ping/Pong，暂不搬入参考的业务帧/ACK架构。
+
+代理验证构建成功，`gofmt -l apps/im/ws/internal/handler/wsconnecthandler.go` 无输出。构建命令为 `& 'C:\Program Files\Go\bin\go.exe' build -o <临时目录>/im-test.exe ./apps/im/ws`。使用独立配置、测试专用签名密钥和127.0.0.1:10412运行最新程序，不修改项目YAML、真实账号或数据库，不重启原8890。验证后已停止临时服务。
+
+Playwright脚本更新为14项检查，实际正常浏览器无业务消息70017ms后仍可回显并正常关闭1000；不回应Pong的原始TCP客户端收到3次Ping后60002ms关闭。鉴权拒绝、来源拒绝、限额、并发与重连回归通过。消息超限仍关闭1006、wasClean=false，不能认为关闭握手已完善。结果见 `web/tests/results/websocket-results.json`；测试使用临时身份，不代表真实登录流程测试。
+
+独立服务复测可设置以下环境变量，再执行上面的脚本命令；测试密钥必须与独立配置匹配，不能替换正常服务密钥：
+
+```powershell
+$env:BAIYUN_WS_URL = 'ws://127.0.0.1:10412/ws'
+$env:BAIYUN_WS_TEST_SECRET = '<独立测试配置的密钥>'
+node web/tests/websocket.e2e.cjs
+```
+
+正常服务复测时删除这两个测试环境变量，脚本默认使用8890与本地配置。需要先重启旧进程才能加载用户新写的心跳代码。下一步完善关闭帧，再接在线连接管理与好友消息转发。
+
+## Playwright真实WebSocket测试（2026-10-11）
+
+用户授权测试，新增 `web/tests/websocket.e2e.cjs`，使用环境已有Playwright和本机Edge，不新增npm依赖。实际访问localhost:3000页面，并连接本机8890服务；HTTP401/403通过Playwright请求API确认。临时JWT从本地WS密钥在内存中签发，使用测试身份，不登录真实账号、不注册、不写数据库、不输出或保存密钥/JWT。结果证明握手/回显行为，不代表真实账号登录界面已验证。
+
+根目录实际执行：
+
+```powershell
+$env:BAIYUN_PLAYWRIGHT_MODULE = 'C:\Users\29417\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules\playwright'
+node web/tests/websocket.e2e.cjs
+```
+
+13项功能检查通过：有效JWT/baiyun协议/连续中文消息回显/主动close1000；无令牌、错误签名、过期、缺exp、非法userId、非HS256、错误应用协议均401；127.0.0.1页面来源403；大于64KiB消息不回显并断开；并发连接分别回显；空闲60016ms断开；断开后重连成功。JSON报告 `web/tests/results/websocket-results.json` 不含凭据，可重复运行覆盖。
+
+待完善：超限及空闲均code1006、wasClean=false，未完成正常关闭握手。首次测试要求超限必须1009而失败，后续分开“限制生效”和“关闭码完善”，允许1006/1009判断限制并记录异常码；最终功能通过不代表关闭处理无问题。本轮未修改后端或重启服务。下一步完善关闭帧和心跳，真实账户登录及好友转发仍未测试。
 
 ## 2026-10-11 最小回显验证准备
 

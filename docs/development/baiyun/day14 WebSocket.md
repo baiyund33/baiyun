@@ -82,9 +82,10 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/websocket"
 )
-
+//secret：JWT签名密钥
 func authenticateWS(r *http.Request, secret string) (int64, error) {
 	// 浏览器通过子协议传入两项：baiyun、登录令牌。
+	//[]string{"baiyun", "<登录JWT>"}
 	protocols := websocket.Subprotocols(r)
 	if len(protocols) != 2 || protocols[0] != "baiyun" {
 		return 0, errors.New("请先登录")
@@ -322,3 +323,67 @@ for {
 **没有消息时，它是在等，不是在不停空转。**
 
 大小限制像“每句话不能太长”，超时像“太久没人说话就挂断”。目前只是自己发、自己收到，还没有把消息转给好友。
+
+
+#### 7.加入**心跳**：
+
+```
+服务器每20秒问：“还在吗？”—— Ping
+浏览器自动回答：“还在。”—— Pong
+收到回答，继续保留连接。
+```
+
+在 [wsconnecthandler.go](E:/code/baiyun/apps/im/ws/internal/handler/wsconnecthandler.go) 的 `conn.SetReadLimit(...)` 后、`for` 循环前加入：
+
+```go
+// 收到心跳回应，延长连接的等待时间。
+conn.SetPongHandler(func(string) error {
+	return conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+})
+
+// 通知后台心跳任务：连接已经结束。
+done := make(chan struct{})
+defer close(done)
+
+// 后台定期发送心跳，不阻塞下面的消息读取。
+go func() {
+	ticker := time.NewTicker(20 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			err := conn.WriteControl(
+				websocket.PingMessage,
+				nil,
+				time.Now().Add(10*time.Second),
+			)
+			if err != nil {
+				conn.Close()
+				return
+			}
+
+		case <-done:
+			return
+		}
+	}
+}()
+```
+
+原来的消息读取和回显循环保留，将读超时注释改为：
+
+```
+// 60秒未收到消息或心跳回应，则释放连接。
+```
+
+这里首次用到三个概念：
+
+|代码|简单理解|
+|---|---|
+|`go func()`|开一个后台任务|
+|`ticker`|每20秒响一次的闹钟|
+|`done` channel|通知后台任务停止|
+
+心跳使用 `WriteControl`，它允许与原来的消息写入并发调用。浏览器会自动回复 Pong，不需要前端手写回复代码。
+
+完成后测试目标改为：**不发送聊天消息，超过60秒仍能保持连接。**

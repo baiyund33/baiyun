@@ -18,6 +18,8 @@ npm run dev
 
 好友通知也采用无限滚动，每批20条，失败可重试。点击通知入口从第一页重新加载；接受/拒绝更新当前记录，保留已加载的其他通知。
 
+WebSocket自动测试脚本：`tests/websocket.e2e.cjs`，需要本地前端3000、WS及Playwright/Edge；默认连接8890，可用BAIYUN_WS_URL指定独立服务。14项检查含70秒健康空闲和60秒失联清理，运行方法见 [WS开发记录](../docs/development/im-websocket.md)。它在内存生成测试JWT，不测试真实账号登录或修改数据库。报告为 `tests/results/websocket-results.json`；超限异常关闭码1006仍待完善。
+
 详见 [开发与验证记录](../docs/development/web-auth.md) 和 [部署说明](../docs/deploy/web.md)。TypeScript/构建与模拟接口浏览器验证通过，真实后端联调待验证。
 
 
